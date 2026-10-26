@@ -1,70 +1,49 @@
-# Getting Started with Create React App
+# SRIVARDHAN INFRA & INTERIORS
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+A responsive, editorial architecture and interiors website built in the existing repository. React remains the UI framework. Vite replaces the root's unusable `react-scripts@0.0.0`; a small prerender step makes every public route a real HTML document suitable for GitHub Pages. No Next.js backend is implied on static hosting.
 
-## Available Scripts
+## Run locally
 
-In the project directory, you can run:
+Node 24+ is required for the native SQLite lead service.
 
-### `npm start`
+```sh
+npm ci
+npm run server
+# In a second terminal:
+npm run dev
+```
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
+Open `http://127.0.0.1:5173/vardhanproject/`. Development inquiries use the local service on port 8791. Submitted data is in ignored `data/leads.sqlite`; do not use real personal data for QA. No notifications or advertising integrations are enabled by default.
 
-The page will reload when you make changes.\
-You may also see any lint errors in the console.
+```sh
+npm test          # validation, persistence, authentication, status workflow, rate limits
+npm run build    # client bundle + full HTML for every route + sitemap
+npm run check    # page metadata, headings, asset and internal-link checks
+npm run preview  # production build at http://127.0.0.1:4173/vardhanproject/
+```
 
-### `npm test`
+Production builds without `VITE_LEAD_API_URL` use an explicit WhatsApp handoff. They never say a message was delivered just because WhatsApp was opened. With an API endpoint configured, success appears only after durable storage returns a reference.
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+## Included
 
-### `npm run build`
+- Cinematic homepage, studio, eight differentiated service pages, gallery with filters, four clearly labelled inspiration studies, three journal articles, contact and legal pages.
+- Three focused campaign routes: `consult/interiors/`, `consult/construction/`, `consult/partners/`.
+- Two-step qualification form, consent, contextual service selection, conditional partnership field and budget options.
+- SQLite-backed lead service, authenticated staff desk at `admin/`, eight lead statuses, deletion API, rate limits, honeypot, request validation and duplicate prevention.
+- Consent-controlled GA4 / GTM / Google Ads / Meta Pixel adapters, optional Meta CAPI and CRM notification webhook.
+- Original logo unchanged, self-hosted fonts, responsive WebP imagery, reduced-motion support, keyboard navigation and native modal menu.
+- Prerendered metadata, canonical and Open Graph tags, business structured data, sitemap, robots and GitHub Pages deployment workflow.
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+## Documentation
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+- [Audit, creative direction and factual limits](docs/AUDIT-AND-DESIGN.md)
+- [Content editing and image provenance](docs/CONTENT.md)
+- [Deployment, leads and maintenance](docs/OPERATIONS.md)
+- [Analytics setup, testing and experimentation](docs/ANALYTICS.md)
+- [Verification results](docs/VERIFICATION.md)
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+The historical `base/`, `frontend/` and `base.html` files are preserved but are **not active application sources**. Make changes at the repository root. Only `dist/` is published. Do not deploy `public/` or the historical folders.
 
-### `npm run eject`
+## Still required from the business
 
-**Note: this is a one-way operation. Once you `eject`, you can't go back!**
-
-If you aren't satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
-
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you're on your own.
-
-You don't have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn't feel obligated to use this feature. However we understand that this tool wouldn't be useful if you couldn't customize it when you are ready for it.
-
-## Learn More
-
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
-
-To learn React, check out the [React documentation](https://reactjs.org/).
-
-### Code Splitting
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)
-
-### Analyzing the Bundle Size
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size](https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size)
-
-### Making a Progressive Web App
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app](https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app)
-
-### Advanced Configuration
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/advanced-configuration](https://facebook.github.io/create-react-app/docs/advanced-configuration)
-
-### Deployment
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/deployment](https://facebook.github.io/create-react-app/docs/deployment)
-
-### `npm run build` fails to minify
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
+Client-approved project photos/case studies, verified team/credential/testimonial information, confirmation of published contact details, a real API hosting destination and staff secret, and any CRM/advertising credentials. These are not invented or silently activated. The supplied brief confirms Vijayawada as the target market; no street address is claimed.

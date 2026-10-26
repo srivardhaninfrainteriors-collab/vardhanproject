@@ -1,38 +1,18 @@
 {
-  "name": "frontend",
-  "version": "0.1.0",
+  "name": "srivardhan-infra-interiors",
+  "version": "1.0.0",
   "private": true,
-  "dependencies": {
-    "@testing-library/dom": "^10.4.0",
-    "@testing-library/jest-dom": "^6.6.3",
-    "@testing-library/react": "^16.2.0",
-    "@testing-library/user-event": "^13.5.0",
-    "react": "^19.1.1",
-    "react-dom": "^19.1.1",
-    "react-scripts": "^0.0.0",
-    "web-vitals": "^2.1.4"
-  },
+  "type": "module",
+  "engines": { "node": ">=24" },
   "scripts": {
-    "start": "react-scripts start",
-    "build": "react-scripts build",
-    "test": "react-scripts test"
+    "start": "vite --host 127.0.0.1",
+    "dev": "vite --host 127.0.0.1",
+    "build": "vite build && vite build --ssr src/entry-server.jsx --outDir .ssr && node scripts/prerender.mjs",
+    "preview": "vite preview --host 127.0.0.1",
+    "server": "node --env-file-if-exists=.env server/index.mjs",
+    "test": "node --test server/*.test.mjs",
+    "check": "node scripts/check-build.mjs"
   },
-  "eslintConfig": {
-    "extends": [
-      "react-app",
-      "react-app/jest"
-    ]
-  },
-  "browserslist": {
-    "production": [
-      ">0.2%",
-      "not dead",
-      "not op_mini all"
-    ],
-    "development": [
-      "last 1 chrome version",
-      "last 1 firefox version",
-      "last 1 safari version"
-    ]
-  }
+  "dependencies": { "react": "^19.1.1", "react-dom": "^19.1.1" },
+  "devDependencies": { "vite": "^7.3.1" }
 }
