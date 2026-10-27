@@ -1090,6 +1090,12 @@ summary:focus-visible {
   grid-template-columns: 1fr 1fr;
   gap: 20px;
 }
+.form-fields {
+  border: 0;
+  padding: 0;
+  margin: 0;
+  min-width: 0;
+}
 input,
 select,
 textarea {

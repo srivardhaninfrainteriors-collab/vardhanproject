@@ -37,3 +37,11 @@ No claim is made that field LCP ≤ 2.5 s, INP ≤ 200 ms or CLS ≤ 0.1 has bee
 - No production API host or staff secret is configured. The static build has a real WhatsApp handoff; local API storage was tested separately.
 - No genuine company projects, testimonials, team biographies or credentials were supplied. Reference imagery remains labelled; verified case studies are intentionally unpublished.
 - No GitHub push or production deployment was performed.
+
+## Follow-up review — 27 October 2026
+
+- Retried inquiries now compare every saved project field, not only name and phone. Changed location, budget or message returns an explicit conflict instead of silently reporting success for an earlier version. Regression assertions confirm the saved inquiry remains unchanged.
+- Form fields are locked while a submission is in progress, preventing edits from being discarded by an in-flight success response.
+- Preparing a WhatsApp inquiry, editing its location and regenerating it was checked in the production browser: the old link disappears, and the replacement contains the edited details.
+- Withdrawing contact consent removes the prepared WhatsApp link immediately. No external WhatsApp message was sent.
+- The updated backend tests, production build and generated-page checks pass. The follow-up browser run reported no console errors or warnings.

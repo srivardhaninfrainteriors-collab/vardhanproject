@@ -306,9 +306,10 @@ export function createLeadServer(options = {}) {
             .get(data.requestId);
           if (existing) {
             const prior = JSON.parse(existing.payload);
-            if (prior.phone !== data.phone || prior.name !== data.name) {
+            if (Object.keys(fields).some((key) => prior[key] !== data[key])) {
               json(res, 409, {
-                error: "Inquiry reference already used. Please refresh.",
+                error:
+                  "An earlier version of this inquiry is already saved. Please call or WhatsApp the team to update its details.",
               });
               return;
             }

@@ -60,3 +60,7 @@ Delivery state is `not_configured`, `pending`, `delivered` (receiver returned 2x
 ## Launch dependencies
 
 No live API destination, CRM webhook, staff secret, analytics IDs or CAPI token was supplied. Production direct submissions and notifications remain unconfigured until these are provided. The static WhatsApp path works without them. Verify the privacy/terms text, retention practice, contact ownership and all future portfolio claims with the business before public release.
+
+### Retrying a connection failure
+
+An unchanged retry uses the same request ID and returns the existing saved inquiry if the first request reached storage. Editing any project field after a previously saved request returns an explicit conflict; contact the team to amend that inquiry rather than creating accidental duplicates. Fields are disabled while saving. In WhatsApp mode, editing any field or withdrawing consent invalidates the prepared message and requires preparing it again.

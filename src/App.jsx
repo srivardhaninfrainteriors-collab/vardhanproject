@@ -678,7 +678,7 @@ function LeadForm({ service = "", campaign = "" }) {
     } catch (err) {
       setState("error");
       setMessage(
-        `${err.name === "TimeoutError" ? "The connection timed out. You can retry safely." : err.message} You can also call or use WhatsApp below.`,
+        `${err.name === "TimeoutError" ? "The connection timed out. You can retry the same inquiry safely." : err.message} You can also reach us using the contact links.`,
       );
     }
   }
@@ -687,7 +687,18 @@ function LeadForm({ service = "", campaign = "" }) {
       status.current?.focus();
   }, [state]);
   return (
-    <form className="lead-form" onSubmit={submit} ref={form}>
+    <form
+      className="lead-form"
+      onSubmit={submit}
+      ref={form}
+      onChange={() => {
+        if (state === "handoff") {
+          setHandoff("");
+          setMessage("");
+          setState("idle");
+        }
+      }}
+    >
       <div className="form-top">
         <span>YOUR NEXT CHAPTER STARTS HERE</span>
         <span>0{stage} / 02</span>
@@ -703,7 +714,7 @@ function LeadForm({ service = "", campaign = "" }) {
           : "These details help us prepare for your conversation."}
       </p>
       {state !== "success" && (
-        <>
+        <fieldset className="form-fields" disabled={state === "sending"}>
           <div hidden={stage !== 1}>
             <div className="form-row">
               <label>
@@ -885,7 +896,7 @@ function LeadForm({ service = "", campaign = "" }) {
               <Arrow />
             </button>
           </div>
-        </>
+        </fieldset>
       )}
       {message && (
         <div

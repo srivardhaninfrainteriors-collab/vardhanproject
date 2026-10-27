@@ -97,9 +97,21 @@ test("end-to-end persistence, idempotency, staff authentication, status workflow
         .status,
       409,
     );
+    for (const changes of [
+      { location: "Different location" },
+      { budget: "₹25–50 lakh" },
+      { message: "Changed brief" },
+    ]) {
+      assert.equal(
+        (await send("/leads", "POST", { ...input, ...changes })).status,
+        409,
+      );
+    }
     const saved = await (await send("/leads", "GET", null, true)).json();
     assert.equal(saved.leads.length, 1);
     assert.equal(saved.leads[0].name, input.name);
+    assert.equal(saved.leads[0].location, input.location);
+    assert.equal(saved.leads[0].budget, input.budget);
     assert.equal(saved.leads[0].notification_status, "not_configured");
     assert.equal(saved.total, 1);
     const older = await (
