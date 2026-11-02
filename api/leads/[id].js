@@ -1,10 +1,10 @@
-import { sql } from "@vercel/postgres";
 import { withApi, remoteAddress, adminOK, hash } from "../../lib/http.mjs";
-import { ensureSchema, limit } from "../../lib/db.mjs";
+import { ensureSchema, limit, getDb } from "../../lib/db.mjs";
 import { statuses } from "../../lib/lead.mjs";
 
 export default withApi(async (req, res) => {
   await ensureSchema();
+  const db = await getDb();
   const address = remoteAddress(req);
   if (!(await limit(`admin:${hash(address)}`, 120, 60000))) {
     res.status(429).json({ error: "Too many requests." });
@@ -15,8 +15,8 @@ export default withApi(async (req, res) => {
     return;
   }
   const { id } = req.query;
-  const { rows } = await sql`SELECT id FROM leads WHERE id=${id}`;
-  if (!rows[0]) {
+  const existing = await db.collection("leads").findOne({ _id: id }, { projection: { _id: 1 } });
+  if (!existing) {
     res.status(404).json({ error: "Inquiry not found." });
     return;
   }
@@ -26,16 +26,18 @@ export default withApi(async (req, res) => {
       res.status(400).json({ error: "Invalid lead status." });
       return;
     }
-    await sql`UPDATE leads SET status=${status} WHERE id=${id}`;
-    await sql`
-      INSERT INTO audit(lead_id, created_at, status) VALUES (${id}, ${new Date().toISOString()}, ${status})
-    `;
+    await db.collection("leads").updateOne({ _id: id }, { $set: { status } });
+    await db.collection("audit").insertOne({
+      lead_id: id,
+      created_at: new Date().toISOString(),
+      status,
+    });
     res.status(200).json({ id, status });
     return;
   }
   if (req.method === "DELETE") {
-    await sql`DELETE FROM audit WHERE lead_id=${id}`;
-    await sql`DELETE FROM leads WHERE id=${id}`;
+    await db.collection("audit").deleteMany({ lead_id: id });
+    await db.collection("leads").deleteOne({ _id: id });
     res.status(200).json({ deleted: true });
     return;
   }
