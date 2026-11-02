@@ -1,5 +1,13 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "buildCommand": "npm run build",
-  "outputDirectory": "dist"
+  "outputDirectory": "dist",
+  "rewrites": [
+    { "source": "/api/crm/leads/:id/:action(notes|tasks|proposals)", "destination": "/api/crm/leads?id=:id&action=:action" },
+    { "source": "/api/crm/leads/:id", "destination": "/api/crm/leads?id=:id" },
+    { "source": "/api/crm/auth/:action", "destination": "/api/crm/auth?action=:action" },
+    { "source": "/api/crm/team/:id", "destination": "/api/crm/team?id=:id" },
+    { "source": "/api/crm/tasks/:id", "destination": "/api/crm/tasks?id=:id" },
+    { "source": "/api/crm/proposals/:id", "destination": "/api/crm/proposals?id=:id" }
+  ]
 }
