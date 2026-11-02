@@ -60,27 +60,26 @@ A new random password is written to the private access file unless supplied thro
 
 ## Connect Meta Lead Ads
 
-This integration handles **Facebook/Instagram Instant Forms** delivered through a Facebook Page’s `leadgen` webhook. It is separate from Meta Pixel and Conversions API tracking of website inquiries. A CRM entry does not imply marketing consent or conversion optimization feedback has been sent to Meta.
+This integration handles **Facebook/Instagram Instant Forms** delivered through a Facebook Page’s `leadgen` webhook. Leads appear under **Meta Ads Leads** (all roles; agents see only their assigned leads) and in the normal inbox/pipeline.
 
-Configure these private server variables, then restart the server:
+### One-time setup (Vercel)
 
 | Variable | Purpose |
 |---|---|
-| `META_APP_SECRET` | Verify webhook signatures and generate Graph `appsecret_proof` |
-| `META_VERIFY_TOKEN` | A long random token you choose; enter the same value in Meta’s webhook setup |
-| `META_PAGE_ACCESS_TOKEN` | Page access token with the required lead access for the app and Page |
-| `META_PAGE_ID` | The numeric Facebook Page ID allowed to deliver leads |
-| `META_GRAPH_VERSION` | A currently supported version for your Meta app, formatted `vNN.0` |
+| `META_APP_ID` | Your Meta app ID (not secret) |
+| `META_APP_SECRET` | Verifies webhook signatures, exchanges login codes, encrypts the stored Page token |
+| `META_GRAPH_VERSION` | Optional, e.g. `v24.0` (default) |
+| `META_PAGE_ID` | Optional: preselect this Page when the Facebook account manages several |
 
-1. Deploy the Node service on a public HTTPS host with persistent storage. Register `https://YOUR-HOST/api/meta/webhook` in the Meta app’s Page webhook configuration. The callback is at the host root, even when the website lives under `/vardhanproject/`.
-2. Complete the webhook challenge with your chosen verification token. Subscribe to the Page `leadgen` field and subscribe the app to the intended Page. Grant the app the Page’s lead access in the relevant business settings. Meta app mode, business verification, app review, Page tasks and permissions depend on the app/account; verify them in the Meta dashboard.
-3. In CRM → Meta Lead Ads, check Page access. This only verifies the token can read the Page; it does **not** establish that lead retrieval permissions or webhooks work.
-4. Add every Instant Form using its numeric form ID. Set the exact question field names Meta returns, choose default service/location/property, and assign an owner. Standard fields default to `full_name`, `phone_number`, `email` and `city`; custom questions must match their returned field names.
-5. Use Meta’s Lead Ads Testing Tool to create a synthetic lead for that Page/form. Confirm a signed delivery appears under Import diagnostics as **imported**, then inspect the CRM record’s owner, contact details, source and original answers.
-6. Repeat the delivery to verify no additional record appears. Test a custom question, a paused/unmapped form and a retrieval failure before routing live campaigns.
-7. Import historical leads in batches of up to 100. The next-page cursor is saved. “Restart historical import” rechecks the form from the beginning; already imported provider lead IDs are retained once.
+In the Meta app: add **Facebook Login** with the valid OAuth redirect URI `https://YOUR-HOST/api/crm/meta/oauth-callback`, add **Webhooks**, and set the app to Live (privacy policy `https://YOUR-HOST/privacy`).
 
-Primary Meta reference: [Meta’s lead retrieval setup checker](https://github.com/facebookincubator/catalogue-of-api-solutions/blob/main/solutions/leads/leads-retrieval-set-up-checker.md). It documents Page subscriptions, `leadgen` webhook payloads, lead retrieval, custom disclaimer responses, and the Lead Ads Testing Tool. Consult the linked current Meta documentation for permissions and review requirements; this repository does not hard-code a supposedly permanent Graph version or auto-grant permissions.
+Then, in CRM → **Meta setup**, an administrator clicks **Connect Facebook**, approves the Page permissions and (if several) picks the Page. The server then:
+
+1. Exchanges the login for a long-lived Page token and stores it AES-GCM encrypted in MongoDB.
+2. Subscribes the Page to the app’s `leadgen` field and registers `https://YOUR-HOST/api/meta/webhook` as the app’s Page webhook (the verify token is derived from the app secret, so nobody copies it).
+3. Lists the Page’s Instant Forms and maps their questions automatically. Forms created later are registered the first time they receive a lead. Admins can still edit mappings, owners and pause forms.
+
+**Sync now** re-imports the most recent 50 leads per form (duplicates are ignored). Use Meta’s Lead Ads Testing Tool to send a test lead and confirm it appears. `META_PAGE_ACCESS_TOKEN` + `META_PAGE_ID` in the environment still work and override the stored connection.
 
 ### Delivery and recovery
 
