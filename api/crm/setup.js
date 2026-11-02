@@ -6,5 +6,5 @@ import { handleCRM } from "../../lib/crm-routes.mjs";
 export default withApi(async (req, res) => {
   await ensureSchema();
   await ensureCRMSchema();
-  await handleCRM("/setup", req, res);
+  await handleCRM(req.query.action === "reset" ? "/setup/reset" : "/setup", req, res);
 });

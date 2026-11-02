@@ -3,6 +3,7 @@
   "buildCommand": "npm run build",
   "outputDirectory": "dist",
   "rewrites": [
+    { "source": "/api/crm/setup/reset", "destination": "/api/crm/setup?action=reset" },
     { "source": "/api/crm/leads/:id/:action(notes|tasks|proposals)", "destination": "/api/crm/leads?id=:id&action=:action" },
     { "source": "/api/crm/leads/:id", "destination": "/api/crm/leads?id=:id" },
     { "source": "/api/crm/auth/:action", "destination": "/api/crm/auth?action=:action" },
