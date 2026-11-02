@@ -3,12 +3,17 @@
   "buildCommand": "npm run build",
   "outputDirectory": "dist",
   "rewrites": [
-    { "source": "/api/crm/setup/reset", "destination": "/api/crm/setup?action=reset" },
+    { "source": "/api/crm/dashboard", "destination": "/api/crm/misc?action=dashboard" },
+    { "source": "/api/crm/export", "destination": "/api/crm/misc?action=export" },
+    { "source": "/api/crm/setup/reset", "destination": "/api/crm/misc?action=setup-reset" },
+    { "source": "/api/crm/setup", "destination": "/api/crm/misc?action=setup" },
     { "source": "/api/crm/leads/:id/:action(notes|tasks|proposals)", "destination": "/api/crm/leads?id=:id&action=:action" },
     { "source": "/api/crm/leads/:id", "destination": "/api/crm/leads?id=:id" },
     { "source": "/api/crm/auth/:action", "destination": "/api/crm/auth?action=:action" },
     { "source": "/api/crm/team/:id", "destination": "/api/crm/team?id=:id" },
     { "source": "/api/crm/tasks/:id", "destination": "/api/crm/tasks?id=:id" },
-    { "source": "/api/crm/proposals/:id", "destination": "/api/crm/proposals?id=:id" }
+    { "source": "/api/crm/proposals/:id", "destination": "/api/crm/proposals?id=:id" },
+    { "source": "/api/crm/meta/:action", "destination": "/api/crm/meta?action=:action" },
+    { "source": "/api/crm/meta", "destination": "/api/crm/meta?action=status" }
   ]
 }
