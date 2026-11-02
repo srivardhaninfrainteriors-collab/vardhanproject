@@ -8,7 +8,11 @@
     },
     "api": {
       "root": "backend",
-      "framework": "other"
+      "functions": {
+        "api/**/*.mjs": {
+          "runtime": "nodejs20.x"
+        }
+      }
     }
   },
   "rewrites": [
