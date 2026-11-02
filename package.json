@@ -3,7 +3,9 @@
   "version": "1.0.0",
   "private": true,
   "type": "module",
-  "engines": { "node": ">=24" },
+  "engines": {
+    "node": ">=24"
+  },
   "scripts": {
     "start": "vite --host 127.0.0.1",
     "dev": "vite --host 127.0.0.1",
@@ -11,8 +13,15 @@
     "preview": "vite preview --host 127.0.0.1",
     "server": "node --env-file-if-exists=.env server/index.mjs",
     "test": "node --test server/*.test.mjs",
-    "check": "node scripts/check-build.mjs"
+    "check": "node scripts/check-build.mjs",
+    "crm:setup": "node --env-file-if-exists=.env scripts/crm-setup.mjs",
+    "crm:backup": "node --env-file-if-exists=.env scripts/crm-backup.mjs"
   },
-  "dependencies": { "react": "^19.1.1", "react-dom": "^19.1.1" },
-  "devDependencies": { "vite": "^7.3.1" }
+  "dependencies": {
+    "react": "^19.1.1",
+    "react-dom": "^19.1.1"
+  },
+  "devDependencies": {
+    "vite": "^7.3.1"
+  }
 }

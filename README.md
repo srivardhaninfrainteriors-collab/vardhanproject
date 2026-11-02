@@ -8,6 +8,8 @@ Node 24+ is required for the native SQLite lead service.
 
 ```sh
 npm ci
+npm run build
+npm run crm:setup # first run only; creates private local sign-in details
 npm run server
 # In a second terminal:
 npm run dev
@@ -22,19 +24,23 @@ npm run check    # page metadata, headings, asset and internal-link checks
 npm run preview  # production build at http://127.0.0.1:4173/vardhanproject/
 ```
 
-Production builds without `VITE_LEAD_API_URL` use an explicit WhatsApp handoff. They never say a message was delivered just because WhatsApp was opened. With an API endpoint configured, success appears only after durable storage returns a reference.
+Open the CRM at `http://127.0.0.1:8791/vardhanproject/crm/`. The Node server connects website forms to the CRM automatically. Static-only production builds without `VITE_LEAD_API_URL` use an explicit WhatsApp handoff. They never say a message was delivered just because WhatsApp was opened. With an API endpoint configured, success appears only after durable storage returns a reference.
 
 ## Included
 
 - Cinematic homepage, studio, eight differentiated service pages, gallery with filters, four clearly labelled inspiration studies, three journal articles, contact and legal pages.
 - Three focused campaign routes: `consult/interiors/`, `consult/construction/`, `consult/partners/`.
 - Two-step qualification form, consent, contextual service selection, conditional partnership field and budget options.
-- SQLite-backed lead service, authenticated staff desk at `admin/`, eight lead statuses, deletion API, rate limits, honeypot, request validation and duplicate prevention.
+- Full sales CRM at `crm/` (also `admin/`): individual sign-in, role-based access, dashboard, searchable leads, pipeline, follow-ups, notes, printable proposals, reports, team controls and CSV export.
+- Meta Lead Ads adapter: signed webhook intake, Page restriction, form mapping, owner routing, original answers, idempotency, durable retries, diagnostics and historical imports. Live connection requires Meta credentials.
+- SQLite persistence, version-checked lead edits, archival, backup/recovery commands, rate limits, public-form consent validation and honeypot.
 - Consent-controlled GA4 / GTM / Google Ads / Meta Pixel adapters, optional Meta CAPI and CRM notification webhook.
 - Original logo unchanged, self-hosted fonts, responsive WebP imagery, reduced-motion support, keyboard navigation and native modal menu.
 - Prerendered metadata, canonical and Open Graph tags, business structured data, sitemap, robots and GitHub Pages deployment workflow.
 
 ## Documentation
+
+- [CRM usage, account setup, Meta Lead Ads and backups](docs/CRM.md)
 
 - [Audit, creative direction and factual limits](docs/AUDIT-AND-DESIGN.md)
 - [Content editing and image provenance](docs/CONTENT.md)
@@ -46,4 +52,4 @@ The historical `base/`, `frontend/` and `base.html` files are preserved but are 
 
 ## Still required from the business
 
-Client-approved project photos/case studies, verified team/credential/testimonial information, confirmation of published contact details, a real API hosting destination and staff secret, and any CRM/advertising credentials. These are not invented or silently activated. The supplied brief confirms Vijayawada as the target market; no street address is claimed.
+Client-approved project photos/case studies, verified team/credential/testimonial information, confirmation of published contact details, a persistent HTTPS hosting destination, and Meta app/Page and advertising credentials. These are not invented or silently activated. The supplied brief confirms Vijayawada as the target market; no street address is claimed.

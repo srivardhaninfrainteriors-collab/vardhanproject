@@ -463,7 +463,8 @@ export function pageMeta(path) {
     "contact/": "Book a Private Consultation",
     "privacy/": "Privacy & Cookies",
     "terms/": "Website Terms",
-    "admin/": "Lead Desk",
+    "admin/": "Private CRM",
+    "crm/": "Relationship Studio CRM",
     "404/": "Page Not Found",
   };
   return {

@@ -1,3 +1,17 @@
+# CRM verification — 2 November 2026
+
+- Native Node test runner: **8 integration tests passed** covering authentication/CSRF/roles, assigned-lead isolation, session revocation, concurrent edit conflicts, search escaping, pipeline/reporting, follow-ups/rescheduling, proposal rounding/limits, CSV formula protection, archiving, persistence and public website inquiry provenance.
+- Synthetic Meta tests passed: verification challenge, HMAC signatures, Page isolation, custom mappings/answers, original disclaimer responses, idempotency, secret redaction, unmapped/paused form recovery, transient retry, mismatched lead rejection, cursor-based historical import and process-restart recovery.
+- Production client/SSR/prerender build passes. Static checker: **30 HTML documents and 1,310 internal links/assets**, including private noindex CRM/admin pages.
+- Browser verified administrator sign-in, manual lead creation, stage/value updates, follow-up creation, proposal creation/total/preview, desktop Meta setup state, responsive navigation and lead screens, mobile rescheduling, Escape-to-close and keyboard focus cycling in the mobile drawer. Temporary QA records created for this turn are removed after verification. The pre-existing website QA record is preserved.
+- Consistent SQLite snapshot command completed successfully; snapshot integrity and counts checked separately. No live provider credentials or public deployment were used.
+- Local access details are in ignored `data/crm-access.txt`; no credentials are committed.
+- Live Meta delivery, permissions, token expiry/rotation, external messaging and HTTPS production infrastructure require account/hosting setup and a real end-to-end test. Synthetic tests do not prove live authorization.
+
+See [CRM guide](CRM.md) for scope, deployment, limits and recovery.
+
+---
+
 # Verification record — 26 October 2026
 
 ## Automated checks completed
@@ -33,7 +47,7 @@ No claim is made that field LCP ≤ 2.5 s, INP ≤ 200 ms or CLS ≤ 0.1 has bee
 
 ## Not verified or activated
 
-- No real CRM/webhook receiver, email/WhatsApp notification account, GA4/GTM/Google Ads account, Meta Pixel or CAPI token was supplied. Their live delivery and provider diagnostics have not been verified.
+- No external CRM/webhook receiver, email/WhatsApp notification account, GA4/GTM/Google Ads account, Meta Pixel or CAPI token was supplied. Their live delivery and provider diagnostics have not been verified.
 - No production API host or staff secret is configured. The static build has a real WhatsApp handoff; local API storage was tested separately.
 - No genuine company projects, testimonials, team biographies or credentials were supplied. Reference imagery remains labelled; verified case studies are intentionally unpublished.
 - No GitHub push or production deployment was performed.

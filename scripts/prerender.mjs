@@ -20,9 +20,9 @@ const schema = {
   logo: `${origin}logo.png`,
   sameAs: [brand.instagram],
 };
-for (const route of [...pageRoutes, "admin/", "404/"]) {
+for (const route of [...pageRoutes, "admin/", "crm/", "404/"]) {
   const meta = pageMeta(route);
-  const noindex = route === "admin/" || route === "404/";
+  const noindex = ["admin/", "crm/", "404/"].includes(route);
   const head = `<link rel="canonical" href="${escape(origin + route)}"/><meta property="og:type" content="website"/><meta property="og:title" content="${escape(meta.title)}"/><meta property="og:description" content="${escape(meta.description)}"/><meta property="og:url" content="${escape(origin + route)}"/><meta property="og:image" content="${origin}images/living-1200.webp"/><meta name="twitter:card" content="summary_large_image"/>${noindex ? '<meta name="robots" content="noindex,nofollow"/>' : ""}<link rel="preload" href="${base}fonts/editorial.woff2" as="font" type="font/woff2" crossorigin/><script type="application/ld+json">${JSON.stringify(schema).replaceAll("<", "\\u003c")}</script>`;
   const html = template
     .replace(/<title>.*?<\/title>/s, `<title>${escape(meta.title)}</title>`)
@@ -46,9 +46,9 @@ await writeFile(
 );
 await writeFile(
   "dist/robots.txt",
-  `User-agent: *\nAllow: /\nDisallow: ${base}admin/\nSitemap: ${origin}sitemap.xml\n`,
+  `User-agent: *\nAllow: /\nDisallow: ${base}admin/\nDisallow: ${base}crm/\nSitemap: ${origin}sitemap.xml\n`,
 );
 await writeFile("dist/.nojekyll", "");
 console.log(
-  `Prerendered ${pageRoutes.length + 2} pages with unique metadata and static content.`,
+  `Prerendered ${pageRoutes.length + 3} pages with unique metadata and static content.`,
 );

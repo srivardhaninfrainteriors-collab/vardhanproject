@@ -4,6 +4,8 @@ import { randomUUID, createHash, timingSafeEqual } from "node:crypto";
 import { mkdirSync, readFileSync, statSync } from "node:fs";
 import { resolve, dirname, extname, sep } from "node:path";
 import { fileURLToPath } from "node:url";
+import { createCRM, createUser } from "./crm.mjs";
+import { createMeta } from "./meta.mjs";
 export const statuses = [
   "new",
   "contacted",
@@ -118,7 +120,7 @@ export function createLeadServer(options = {}) {
     options.origins ||
     (
       process.env.ALLOWED_ORIGINS ||
-      "http://127.0.0.1:5173,http://localhost:5173,http://127.0.0.1:4173"
+      "http://127.0.0.1:5173,http://localhost:5173,http://127.0.0.1:4173,http://127.0.0.1:8791,http://localhost:8791"
     ).split(",");
   const frontendOrigin =
     process.env.SITE_URL ||
@@ -227,15 +229,20 @@ export function createLeadServer(options = {}) {
       console.error("Meta conversion delivery failed for reference", id);
     }
   }
-  async function body(req) {
-    let text = "";
+  async function body(req, maximum = 12000) {
+    const chunks = [];
+    let size = 0;
     for await (const chunk of req) {
-      text += chunk;
-      if (Buffer.byteLength(text) > 12000)
+      size += chunk.length;
+      if (size > maximum)
         throw Object.assign(Error("Inquiry too large."), { status: 413 });
+      chunks.push(chunk);
     }
     try {
-      return JSON.parse(text);
+      const value = JSON.parse(Buffer.concat(chunks).toString("utf8"));
+      if (!value || typeof value !== "object" || Array.isArray(value))
+        throw Error("Invalid object");
+      return value;
     } catch {
       throw Object.assign(Error("Invalid JSON."), { status: 400 });
     }
@@ -247,6 +254,21 @@ export function createLeadServer(options = {}) {
     });
     res.end(JSON.stringify(data));
   }
+  const crm = createCRM({
+    db,
+    statuses,
+    json,
+    body: (req) => body(req, 64000),
+    limit,
+    options,
+  });
+  const meta = createMeta({
+    db,
+    crm,
+    json,
+    body: (req) => body(req, 64000),
+    options,
+  });
   const server = http.createServer(async (req, res) => {
     res.setHeader("X-Content-Type-Options", "nosniff");
     res.setHeader("Referrer-Policy", "strict-origin-when-cross-origin");
@@ -255,6 +277,7 @@ export function createLeadServer(options = {}) {
     const parsed = new URL(req.url, "http://localhost");
     const path = parsed.pathname;
     try {
+      if (await meta.webhook(req, res, parsed)) return;
       if (path.startsWith("/api/")) {
         if (origin && !origins.includes(origin)) {
           json(res, 403, { error: "Origin not allowed." });
@@ -262,6 +285,7 @@ export function createLeadServer(options = {}) {
         }
         if (origin) {
           res.setHeader("Access-Control-Allow-Origin", origin);
+          res.setHeader("Access-Control-Allow-Credentials", "true");
           res.setHeader("Vary", "Origin");
         }
         res.setHeader(
@@ -270,7 +294,7 @@ export function createLeadServer(options = {}) {
         );
         res.setHeader(
           "Access-Control-Allow-Headers",
-          "Content-Type, Authorization",
+          "Content-Type, Authorization, X-CSRF-Token",
         );
         if (req.method === "OPTIONS") {
           res.writeHead(204);
@@ -287,6 +311,7 @@ export function createLeadServer(options = {}) {
                 .split(",")[0]
                 .trim()
             : req.socket.remoteAddress || "unknown";
+        if (await crm.handle(req, res, path, parsed, address, meta)) return;
         if (path === "/api/leads" && req.method === "POST") {
           if (
             !String(req.headers["content-type"]).startsWith("application/json")
@@ -338,6 +363,7 @@ export function createLeadServer(options = {}) {
             JSON.stringify(data),
             webhook ? "pending" : "not_configured",
           );
+          crm.onLeadCreated(id);
           json(res, 201, { id, saved: true });
           void notify(id, data);
           void metaConversion(id, data, req);
@@ -399,12 +425,23 @@ export function createLeadServer(options = {}) {
               id,
             );
             db.prepare(
+              "UPDATE leads SET updated_at=?,version=version+1 WHERE id=?",
+            ).run(new Date().toISOString(), id);
+            crm.record(
+              id,
+              "update",
+              `Stage changed to ${input.status} through legacy staff API`,
+            );
+            db.prepare(
               "INSERT INTO audit(lead_id,created_at,status) VALUES(?,?,?)",
             ).run(id, new Date().toISOString(), input.status);
             json(res, 200, { id, status: input.status });
             return;
           }
           if (req.method === "DELETE") {
+            db.prepare("DELETE FROM crm_activity WHERE lead_id=?").run(id);
+            db.prepare("DELETE FROM crm_tasks WHERE lead_id=?").run(id);
+            db.prepare("DELETE FROM crm_proposals WHERE lead_id=?").run(id);
             db.prepare("DELETE FROM audit WHERE lead_id=?").run(id);
             db.prepare("DELETE FROM leads WHERE id=?").run(id);
             json(res, 200, { deleted: true });
@@ -438,7 +475,16 @@ export function createLeadServer(options = {}) {
       }
       try {
         if (statSync(file).isDirectory()) file = resolve(file, "index.html");
-        const buffer = readFileSync(file);
+        const raw = readFileSync(file);
+        const buffer =
+          extname(file) === ".html"
+            ? raw
+                .toString()
+                .replace(
+                  "</head>",
+                  '<script>window.__SV_RUNTIME__={leadApi:"/api"}</script></head>',
+                )
+            : raw;
         const types = {
           ".html": "text/html; charset=utf-8",
           ".js": "text/javascript; charset=utf-8",
@@ -473,24 +519,25 @@ export function createLeadServer(options = {}) {
             : "We could not process the request. Please try again or contact the team.",
         });
       else res.end();
-      console.error("Request failed:", err.name);
+      if (!err.status || err.status >= 500)
+        console.error("Request failed:", err.name);
     }
   });
-  server.on("close", () => db.close());
+  server.on("listening", () => meta.start());
+  server.on("close", () => {
+    void meta.stop().then(() => db.close());
+  });
+  server.processMetaJobs = meta.processJobs;
+  server.createCRMUser = (input) => createUser(db, input);
   return server;
 }
 if (
   process.argv[1] &&
   resolve(process.argv[1]) === fileURLToPath(import.meta.url)
 ) {
-  if (
-    process.env.NODE_ENV === "production" &&
-    (!process.env.ADMIN_TOKEN ||
-      process.env.ADMIN_TOKEN.length < 32 ||
-      !process.env.ALLOWED_ORIGINS)
-  ) {
+  if (process.env.NODE_ENV === "production" && !process.env.ALLOWED_ORIGINS) {
     console.error(
-      "Production requires ADMIN_TOKEN (32+ characters) and ALLOWED_ORIGINS.",
+      "Production requires ALLOWED_ORIGINS. Configure CRM users with npm run crm:setup.",
     );
     process.exit(1);
   }

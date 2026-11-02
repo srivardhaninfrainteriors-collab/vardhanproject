@@ -593,8 +593,13 @@ function LeadForm({ service = "", campaign = "" }) {
   const form = useRef(null);
   const leadId = useRef(null);
   const status = useRef(null);
-  const endpoint =
-    import.meta.env.VITE_LEAD_API_URL || (import.meta.env.DEV ? "/api" : "");
+  const [endpoint, setEndpoint] = useState(
+    import.meta.env.VITE_LEAD_API_URL || (import.meta.env.DEV ? "/api" : ""),
+  );
+  useEffect(() => {
+    if (!endpoint && window.__SV_RUNTIME__?.leadApi)
+      setEndpoint(window.__SV_RUNTIME__.leadApi);
+  }, []);
   async function submit(e) {
     e.preventDefault();
     if (state === "sending") return;
@@ -1450,20 +1455,22 @@ function AdminLoader() {
       .catch(() => setError(true));
   }, []);
   return Component ? (
-    <Component PageIntro={PageIntro} Arrow={Arrow} />
+    <Component />
   ) : (
     <PageIntro
       eyebrow="STAFF ACCESS"
       title={
-        error
-          ? "Please reload to open the lead desk."
-          : "Opening the lead desk…"
+        error ? "Please reload to open the CRM." : "Opening your workspace…"
       }
     />
   );
 }
 
 export default function App({ path = "" }) {
+  if (["admin/", "crm/"].includes(path)) return <AdminLoader />;
+  return <MarketingApp path={path} />;
+}
+function MarketingApp({ path = "" }) {
   const [cookies, setCookies] = useState(false);
   const home = path === "";
   const campaign = path.startsWith("consult/") && campaigns[path.split("/")[1]];
