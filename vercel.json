@@ -9,7 +9,7 @@
     "api": {
       "root": "backend",
       "functions": {
-        "api/**/*.mjs": {
+        "api/**/*.js": {
           "runtime": "nodejs20.x"
         }
       }
