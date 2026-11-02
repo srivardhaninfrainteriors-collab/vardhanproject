@@ -13,7 +13,6 @@
     { "source": "/api/crm/team/:id", "destination": "/api/crm/team?id=:id" },
     { "source": "/api/crm/tasks/:id", "destination": "/api/crm/tasks?id=:id" },
     { "source": "/api/crm/proposals/:id", "destination": "/api/crm/proposals?id=:id" },
-    { "source": "/api/crm/meta/:action", "destination": "/api/crm/meta?action=:action" },
-    { "source": "/api/crm/meta", "destination": "/api/crm/meta?action=status" }
+    { "source": "/api/crm/meta/:action", "destination": "/api/crm/meta?action=:action" }
   ]
 }

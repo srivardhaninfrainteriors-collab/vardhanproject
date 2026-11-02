@@ -9,5 +9,5 @@ export default withApi(async (req, res) => {
   await ensureMetaSchema();
   const user = await auth(req, !["GET", "HEAD"].includes(req.method));
   requireAdmin(user);
-  await handleMetaAdmin(req.query.action, req, res, user);
+  await handleMetaAdmin(req.query.action || "status", req, res, user);
 });
