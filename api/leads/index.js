@@ -52,6 +52,13 @@ export default withApi(async (req, res) => {
       created_at: new Date().toISOString(),
       status: "new",
       payload: data,
+      source: "website",
+      priority: "normal",
+      deal_value: 0,
+      expected_close: "",
+      archived: 0,
+      version: 1,
+      owner_id: null,
       notification_status: webhook ? "pending" : "not_configured",
     });
     res.status(201).json({ id, saved: true });
