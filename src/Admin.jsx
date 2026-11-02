@@ -52,6 +52,7 @@ function Icon({ name, ...props }) {
     reports: "M4 20V10 M10 20V4 M16 20v-7 M22 20H2",
     team: "M15 21v-3a4 4 0 0 0-4-4H7a4 4 0 0 0-4 4v3 M9 10a4 4 0 1 0 0-8 4 4 0 0 0 0 8 M16 3a4 4 0 0 1 0 7 M17 14a4 4 0 0 1 4 4v3",
     meta: "M3 17C-1 7 8 2 12 12s9 11 9 2S15 3 12 12 6 25 3 17",
+    metaLeads: "M2 15c-1-6 5-9 8-3s7 7 7 1-4-7-7-1-4 9-8 3 M18 4l3 3 M21 4l-3 3",
     settings:
       "M12 8a4 4 0 1 0 0 8 4 4 0 0 0 0-8 M12 2v3 M12 19v3 M2 12h3 M19 12h3 M5 5l2 2 M17 17l2 2 M5 19l2-2 M17 7l2-2",
     search: "M10 3a7 7 0 1 0 0 14 7 7 0 0 0 0-14 M15 15l6 6",
@@ -1341,7 +1342,292 @@ function TaskList({ tasks, onToggle, onOpen, onEdit }) {
     </div>
   );
 }
-function MetaSettings({ data, request, users, onRefresh, onError }) {
+const ago = (v) => {
+  if (!v) return "—";
+  const s = Math.max(0, (Date.now() - new Date(v).getTime()) / 1000);
+  if (s < 60) return "Just now";
+  if (s < 3600) return `${Math.floor(s / 60)} min ago`;
+  if (s < 86400) return `${Math.floor(s / 3600)} h ago`;
+  if (s < 172800) return "Yesterday";
+  return date(v);
+};
+const digits = (p) => String(p || "").replace(/\D/g, "");
+const whatsapp = (p) => {
+  const d = digits(p);
+  return d ? `https://wa.me/${d.length === 10 ? `91${d}` : d}` : "";
+};
+const pretty = (k) =>
+  String(k)
+    .replace(/[_?]+/g, " ")
+    .trim()
+    .replace(/^./, (c) => c.toUpperCase());
+function MetaLeads({ request, user, users, onOpen, refreshKey, endpoint, onError, setView }) {
+  const [rows, setRows] = useState([]),
+    [total, setTotal] = useState(0),
+    [offset, setOffset] = useState(0),
+    [status, setStatus] = useState(null),
+    [q, setQ] = useState(""),
+    [stage, setStage] = useState(""),
+    [busy, setBusy] = useState(false),
+    [loaded, setLoaded] = useState(false),
+    [note, setNote] = useState(""),
+    [expanded, setExpanded] = useState(null);
+  const admin = user.role === "admin";
+  useEffect(() => {
+    let active = true;
+    const controller = new AbortController();
+    const t = setTimeout(
+      async () => {
+        try {
+          const params = new URLSearchParams({ source: "meta", q, status: stage, offset: String(offset) });
+          const [list, meta] = await Promise.all([
+            request(`/leads?${params}`, { signal: controller.signal }),
+            admin ? request("/meta", { signal: controller.signal }).catch(() => null) : Promise.resolve(null),
+          ]);
+          if (!active) return;
+          setRows(list.leads);
+          setTotal(list.total);
+          if (meta) setStatus(meta);
+          setLoaded(true);
+        } catch (e) {
+          if (active && e.name !== "AbortError") onError(e.message);
+        }
+      },
+      q ? 250 : 0,
+    );
+    return () => {
+      active = false;
+      clearTimeout(t);
+      controller.abort();
+    };
+  }, [q, stage, offset, refreshKey]);
+  async function sync() {
+    setBusy(true);
+    setNote("");
+    try {
+      const r = await request("/meta/sync", { method: "POST", body: {} });
+      setNote(r.note);
+      setOffset(0);
+      const list = await request(`/leads?${new URLSearchParams({ source: "meta", q, status: stage })}`);
+      setRows(list.leads);
+      setTotal(list.total);
+    } catch (e) {
+      onError(e.message);
+    } finally {
+      setBusy(false);
+    }
+  }
+  const dayStart = new Date();
+  dayStart.setHours(0, 0, 0, 0);
+  const today = rows.filter((l) => new Date(l.created_at) >= dayStart).length,
+    week = rows.filter((l) => Date.now() - new Date(l.created_at) < 7 * 864e5).length,
+    fresh = rows.filter((l) => l.status === "new").length;
+  const connected = status?.configured;
+  return (
+    <>
+      <section className="crm-panel crm-meta-banner crm-meta-live">
+        <div className="crm-meta-symbol">
+          <Icon name="meta" width="48" height="48" />
+        </div>
+        <div>
+          <span className="crm-eyebrow">FACEBOOK & INSTAGRAM INSTANT FORMS</span>
+          <h2>Meta Ads Leads</h2>
+          <p>
+            {admin
+              ? connected
+                ? `Live from ${status.connection.pageName || "your Facebook Page"}. New form submissions appear here within seconds.`
+                : status
+                  ? "Facebook is not connected yet. Connect your Page once and every new lead will flow in automatically."
+                  : "Checking your Facebook connection…"
+              : "Every lead from your Facebook and Instagram ads, ready for a quick first call."}
+          </p>
+        </div>
+        <div className="crm-meta-actions">
+          {admin && status && (
+            <Badge tone={connected ? "won" : "new"}>
+              {connected ? "● Live" : "Not connected"}
+            </Badge>
+          )}
+          {admin && connected && (
+            <button className="crm-secondary" disabled={busy} onClick={sync}>
+              <Icon name="refresh" /> {busy ? "Syncing…" : "Sync now"}
+            </button>
+          )}
+          {admin && status && !connected && (
+            <a className="crm-primary" href={`${endpoint}/crm/meta/connect`}>
+              Connect Facebook <Icon name="arrow" />
+            </a>
+          )}
+          {admin && (
+            <button className="crm-text-button" onClick={() => setView("meta")}>
+              Meta setup →
+            </button>
+          )}
+        </div>
+      </section>
+      {note && (
+        <p className="crm-notice" role="status">
+          {note}
+        </p>
+      )}
+      <div className="crm-metrics">
+        {[
+          ["Meta leads", total, "All active Meta records", "metaLeads"],
+          ["Today", today, "Received since midnight", "tasks"],
+          ["Last 7 days", week, "Recent ad responses", "reports"],
+          ["Awaiting first call", fresh, "Still in the New stage", "leads"],
+        ].map(([label, value, detail, icon]) => (
+          <article key={label}>
+            <div>
+              <span>{label}</span>
+              <Icon name={icon} />
+            </div>
+            <strong>{value}</strong>
+            <small>{detail}</small>
+          </article>
+        ))}
+      </div>
+      <div className="crm-filters">
+        <label className="crm-search">
+          <Icon name="search" />
+          <input
+            aria-label="Search Meta leads"
+            placeholder="Search name, phone, email or city"
+            value={q}
+            onChange={(e) => {
+              setQ(e.target.value);
+              setOffset(0);
+            }}
+          />
+        </label>
+        <select
+          aria-label="Filter stage"
+          value={stage}
+          onChange={(e) => {
+            setStage(e.target.value);
+            setOffset(0);
+          }}
+        >
+          <option value="">All stages</option>
+          {STAGES.map((s) => (
+            <option key={s} value={s}>
+              {title(s)}
+            </option>
+          ))}
+        </select>
+      </div>
+      <section className="crm-panel">
+        {rows.length ? (
+          <div className="crm-meta-leads">
+            {rows.map((l) => {
+              const m = l.meta || {};
+              const isNew = Date.now() - new Date(l.created_at) < 864e5;
+              const extra = Object.entries(m.answers || {}).filter(
+                ([k]) => !["full_name", "phone_number", "email", "city", "first_name", "last_name"].includes(k),
+              );
+              return (
+                <article key={l.id} className={isNew ? "fresh" : ""}>
+                  <button className="crm-client" onClick={() => onOpen(l.id)}>
+                    <span className="crm-avatar">{initials(l.name)}</span>
+                    <span>
+                      <b>
+                        {l.name}
+                        {isNew && <em className="crm-new-pill">NEW</em>}
+                      </b>
+                      <small>
+                        {[l.location, l.service].filter(Boolean).join(" · ") || "Details in form answers"}
+                      </small>
+                    </span>
+                  </button>
+                  <div className="crm-meta-contact">
+                    {l.phone && <a href={`tel:${digits(l.phone)}`}>{l.phone}</a>}
+                    {l.email && <a href={`mailto:${l.email}`}>{l.email}</a>}
+                  </div>
+                  <div className="crm-meta-source">
+                    <b>{m.form_name || "Instant Form"}</b>
+                    <small>
+                      {[m.campaign_name, m.ad_name].filter(Boolean).join(" · ") ||
+                        (m.ad_id ? `Ad ${m.ad_id}` : m.is_organic ? "Organic" : "Meta Ads")}
+                      {m.platform ? ` · ${m.platform === "ig" ? "Instagram" : m.platform === "fb" ? "Facebook" : m.platform}` : ""}
+                    </small>
+                  </div>
+                  <div className="crm-meta-state">
+                    <Badge tone={l.status}>{title(l.status)}</Badge>
+                    <small title={time(l.created_at)}>{ago(l.created_at)}</small>
+                  </div>
+                  <div className="crm-meta-buttons">
+                    {l.phone && (
+                      <a className="crm-icon-button" href={`tel:${digits(l.phone)}`} aria-label={`Call ${l.name}`}>
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden="true">
+                          <path d="M5 3h4l2 5-2.5 1.5a11 11 0 0 0 6 6L16 13l5 2v4a2 2 0 0 1-2 2A17 17 0 0 1 3 5a2 2 0 0 1 2-2" />
+                        </svg>
+                      </a>
+                    )}
+                    {whatsapp(l.phone) && (
+                      <a
+                        className="crm-icon-button"
+                        href={whatsapp(l.phone)}
+                        target="_blank"
+                        rel="noreferrer"
+                        aria-label={`WhatsApp ${l.name}`}
+                      >
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden="true">
+                          <path d="M4 20l1.3-4A8 8 0 1 1 8 18.7z M9 9c0 3 3 6 6 6l1-1.5-2-1-1 1c-1-.5-2-1.5-2.5-2.5l1-1-1-2z" />
+                        </svg>
+                      </a>
+                    )}
+                    {extra.length > 0 && (
+                      <button
+                        className="crm-secondary"
+                        aria-expanded={expanded === l.id}
+                        onClick={() => setExpanded(expanded === l.id ? null : l.id)}
+                      >
+                        Answers
+                      </button>
+                    )}
+                    <button className="crm-icon-button" aria-label={`Open ${l.name}`} onClick={() => onOpen(l.id)}>
+                      <Icon name="arrow" />
+                    </button>
+                  </div>
+                  {expanded === l.id && (
+                    <dl className="crm-meta-answers">
+                      {extra.map(([k, v]) => (
+                        <div key={k}>
+                          <dt>{pretty(k)}</dt>
+                          <dd>{v}</dd>
+                        </div>
+                      ))}
+                    </dl>
+                  )}
+                </article>
+              );
+            })}
+          </div>
+        ) : (
+          <Empty title={loaded ? (q || stage ? "No Meta leads match." : "No Meta leads yet.") : "Loading Meta leads…"}>
+            {loaded && !q && !stage
+              ? admin && status && !connected
+                ? "Connect Facebook to start receiving Instant Form leads here."
+                : "As soon as someone submits your Facebook or Instagram lead form, they’ll appear here."
+              : "Try another search or stage."}
+          </Empty>
+        )}
+      </section>
+      <div className="crm-pagination">
+        <span>{total ? `${offset + 1}–${offset + rows.length} of ${total} Meta leads` : "0 Meta leads"}</span>
+        <div>
+          <button disabled={offset === 0} onClick={() => setOffset(Math.max(0, offset - 100))}>
+            ← Previous
+          </button>
+          <button disabled={offset + rows.length >= total} onClick={() => setOffset(offset + 100)}>
+            Next →
+          </button>
+        </div>
+      </div>
+    </>
+  );
+}
+function MetaSettings({ data, request, users, onRefresh, onError, endpoint }) {
   const [editing, setEditing] = useState(null),
     [busy, setBusy] = useState(false),
     [notice, setNotice] = useState(""),
@@ -1378,74 +1664,114 @@ function MetaSettings({ data, request, users, onRefresh, onError }) {
             considered workflow.
           </p>
         </div>
-        <Badge tone={data.configured ? "qualified" : "new"}>
-          {data.configured ? "Configured · verify delivery" : "Setup required"}
+        <Badge tone={data.configured ? "won" : "new"}>
+          {data.configured ? "● Connected" : "Setup required"}
         </Badge>
       </section>
       <div className="crm-overview-grid">
         <section className="crm-panel">
           <div className="crm-panel-heading">
             <div>
-              <h2>Connection checklist</h2>
-              <p>Credentials stay on your server.</p>
+              <h2>Facebook connection</h2>
+              <p>One click links your Page. Tokens are encrypted on the server.</p>
             </div>
           </div>
           <div className="crm-checklist">
-            {Object.entries(data.flags).map(([key, value]) => (
-              <div key={key}>
-                <span>
-                  {
-                    {
-                      appSecret: "App secret",
-                      verifyToken: "Webhook verification token",
-                      pageToken: "Page access token",
-                      pageId: "Facebook Page ID",
-                      graphVersion: "Graph API version",
-                    }[key]
-                  }
-                </span>
-                <Badge tone={value ? "qualified" : "new"}>
-                  {value ? "Present" : "Not configured"}
-                </Badge>
+            {[
+              ["Meta app", data.flags.appId && data.flags.appSecret],
+              [
+                data.connection.pageName
+                  ? `Facebook Page · ${data.connection.pageName}`
+                  : "Facebook Page",
+                data.flags.pageConnected,
+              ],
+              ["Lead webhook", data.flags.webhook],
+              ["Instant Forms", data.forms.length > 0],
+            ].map(([label, ok]) => (
+              <div key={label}>
+                <span>{label}</span>
+                <Badge tone={ok ? "qualified" : "new"}>{ok ? "Ready" : "Pending"}</Badge>
               </div>
             ))}
           </div>
+          {data.pendingPages.length > 0 && (
+            <div className="crm-page-picker">
+              <h3>Choose the Page that runs your lead ads</h3>
+              {data.pendingPages.map((p) => (
+                <button
+                  key={p.id}
+                  className="crm-secondary"
+                  disabled={busy}
+                  onClick={() =>
+                    run(() => request("/meta/select-page", { method: "POST", body: { page_id: p.id } }))
+                  }
+                >
+                  {p.name}
+                </button>
+              ))}
+            </div>
+          )}
           <div className="crm-panel-actions">
-            <button
-              className="crm-secondary"
-              disabled={!data.configured || busy}
-              onClick={() =>
-                run(() => request("/meta/test", { method: "POST", body: {} }))
-              }
-            >
-              Check Page access
-            </button>
+            {!data.flags.pageConnected ? (
+              <a
+                className={`crm-primary ${data.flags.appId && data.flags.appSecret ? "" : "disabled"}`}
+                href={data.flags.appId && data.flags.appSecret ? `${endpoint}/crm/meta/connect` : undefined}
+                aria-disabled={!(data.flags.appId && data.flags.appSecret)}
+              >
+                Connect Facebook <Icon name="arrow" />
+              </a>
+            ) : (
+              <>
+                <button
+                  className="crm-primary"
+                  disabled={busy}
+                  onClick={() => run(() => request("/meta/sync", { method: "POST", body: { rewire: true } }))}
+                >
+                  Re-check & sync
+                </button>
+                <a className="crm-secondary" href={`${endpoint}/crm/meta/connect`}>
+                  Reconnect
+                </a>
+                <button
+                  className="crm-text-button"
+                  disabled={busy}
+                  onClick={() => {
+                    if (window.confirm("Disconnect Facebook? Existing leads stay in the CRM."))
+                      run(() => request("/meta/disconnect", { method: "POST", body: {} }));
+                  }}
+                >
+                  Disconnect
+                </button>
+              </>
+            )}
           </div>
         </section>
         <section className="crm-panel crm-setup-notes">
-          <h2>Connect your Page</h2>
-          <ol>
-            <li>Add your Meta secrets to the server environment.</li>
-            <li>
-              In your Meta app, register the public HTTPS callback ending in{" "}
-              <code>{data.webhookPath}</code>.
-            </li>
-            <li>
-              Subscribe the Page to <code>leadgen</code> and grant lead access
-              to your app.
-            </li>
-            <li>Map each Instant Form below, then submit a Meta test lead.</li>
-          </ol>
+          <h2>Delivery health</h2>
           <p>
+            Connected by: {data.connection.connectedBy || "—"} · {time(data.connection.connectedAt)}
+            <br />
+            Webhook registered: {time(data.state.webhook_registered_at)}
+            <br />
+            Webhook verified by Meta: {time(data.state.verified_at)}
+            <br />
             Last webhook: {time(data.state.last_webhook)}
             <br />
             Last imported lead: {time(data.state.last_import)}
             <br />
-            Page access checked: {time(data.state.connection_checked_at)}
+            Graph API: {data.graphVersion}
           </p>
           <p className="crm-help">
-            A successful Page check does not verify lead permissions. No live
-            Meta connection is claimed until a test lead appears.
+            Webhook URL: <code>{data.webhookUrl}</code>
+            <br />
+            OAuth redirect: <code>{data.redirectUrl}</code>
+          </p>
+          {data.state.connect_error && !data.flags.pageConnected && (
+            <p className="crm-error">Last connect error: {data.state.connect_error}</p>
+          )}
+          <p className="crm-help">
+            New forms are detected and mapped automatically. Use Meta’s Lead Ads Testing Tool to send a
+            test lead and confirm it appears under Meta Ads Leads.
           </p>
         </section>
       </div>
@@ -1523,9 +1849,9 @@ function MetaSettings({ data, request, users, onRefresh, onError }) {
             ))}
           </div>
         ) : (
-          <Empty title="Connect your first Instant Form">
-            Add the form ID and map its questions. Unmapped deliveries are
-            retained for review and retry.
+          <Empty title="No Instant Forms yet">
+            Forms on your connected Page are added automatically, including
+            new ones the first time they receive a lead.
           </Empty>
         )}
       </section>
@@ -1997,6 +2323,33 @@ export default function Admin() {
   }, []);
   useEffect(() => {
     if (!session) return;
+    const params = new URLSearchParams(window.location.search);
+    const result = params.get("meta");
+    if (!result) return;
+    params.delete("meta");
+    window.history.replaceState(
+      null,
+      "",
+      window.location.pathname + (params.size ? `?${params}` : ""),
+    );
+    const messages = {
+      connected:
+        "Facebook connected. New Meta leads will now arrive automatically.",
+      choose: "Facebook signed in. Choose the Page that runs your lead ads.",
+      denied: "Facebook connection was cancelled.",
+      expired: "That Facebook sign-in expired. Please connect again.",
+      "no-pages":
+        "No Facebook Pages were shared. Reconnect and allow access to your Page.",
+      "missing-app":
+        "The Meta app ID or secret is missing on the server. Add META_APP_ID and META_APP_SECRET.",
+      error: "Facebook connection failed. See the details below.",
+    };
+    if (session.user.role === "admin") setView(result === "connected" ? "metaLeads" : "meta");
+    if (result === "connected" || result === "choose") setNotice(messages[result]);
+    else setError(messages[result] || "Facebook connection finished.");
+  }, [session?.user.id]);
+  useEffect(() => {
+    if (!session) return;
     const interval = setInterval(() => {
       if (document.visibilityState === "visible") setRefresh((v) => v + 1);
     }, 30000);
@@ -2048,6 +2401,7 @@ export default function Admin() {
     setView(v);
     setMenu(false);
     setError("");
+    setNotice("");
     setQuery("");
     setOffset(0);
     setFilters({
@@ -2062,12 +2416,13 @@ export default function Admin() {
   const navigation = [
     ["overview", "Overview"],
     ["leads", "Lead inbox"],
+    ["metaLeads", "Meta Ads Leads"],
     ["pipeline", "Sales pipeline"],
     ["tasks", "Follow-ups"],
     ["reports", "Reports"],
     ...(user?.role === "admin"
       ? [
-          ["meta", "Meta Lead Ads"],
+          ["meta", "Meta setup"],
           ["team", "Team & access"],
         ]
       : []),
@@ -2319,6 +2674,7 @@ export default function Admin() {
                     tasks: "Keep the conversation going.",
                     reports: "A clearer view of your business.",
                     meta: "Connected to your next client.",
+                    metaLeads: "Fresh from your ads.",
                     team: "Good work starts with a great team.",
                     settings: "Make this workspace yours.",
                   }[view]
@@ -2335,14 +2691,16 @@ export default function Admin() {
                       "Calls, visits and decisions — all in their right place.",
                     reports:
                       "Real lead and project data, without the guesswork.",
-                    meta: "Manage Instant Forms, field mapping and delivery health.",
+                    meta: "Connect Facebook, manage Instant Forms and delivery health.",
+                    metaLeads:
+                      "Facebook and Instagram Instant Form leads, live as they arrive.",
                     team: "Clear responsibilities. The right access.",
                     settings: "Manage your account and workspace preferences.",
                   }[view]
                 }
               </p>
             </div>
-            {!["meta", "team", "settings"].includes(view) && (
+            {!["meta", "metaLeads", "team", "settings"].includes(view) && (
               <button className="crm-primary" onClick={() => setAdding(true)}>
                 <Icon name="plus" /> New inquiry
               </button>
@@ -2648,8 +3006,21 @@ export default function Admin() {
               </section>
             </>
           )}
+          {view === "metaLeads" && (
+            <MetaLeads
+              request={request}
+              user={user}
+              users={users}
+              onOpen={setSelected}
+              refreshKey={refresh}
+              endpoint={endpoint}
+              onError={setError}
+              setView={navigate}
+            />
+          )}
           {view === "meta" && (
             <MetaSettings
+              endpoint={endpoint}
               data={meta}
               request={request}
               users={users}
