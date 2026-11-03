@@ -837,9 +837,13 @@ function LeadForm({ service = "", campaign = "", hero = false }) {
     </form>
   );
 }
-function Consultation({ service = "", campaign = "" }) {
+function Consultation({ service = "", campaign = "", formFirst = false }) {
   return (
-    <section id="consultation" className="consultation section-pad">
+    <section
+      id="consultation"
+      className={`consultation section-pad ${formFirst ? "form-first" : ""}`}
+    >
+      {formFirst && <LeadForm service={service} campaign={campaign} />}
       <div className="consultation-copy reveal">
         <Kicker>LET’S BEGIN SOMETHING MEANINGFUL</Kicker>
         <h2>
@@ -882,7 +886,7 @@ function Consultation({ service = "", campaign = "" }) {
           consultation, site review and scope.
         </p>
       </div>
-      <LeadForm service={service} campaign={campaign} />
+      {!formFirst && <LeadForm service={service} campaign={campaign} />}
     </section>
   );
 }
@@ -1518,17 +1522,8 @@ function MarketingApp({ path = "" }) {
   else if (path === "contact/")
     body = (
       <>
-        <PageIntro
-          eyebrow="VIJAYAWADA / ANDHRA PRADESH"
-          title={
-            <>
-              Your vision.
-              <br />
-              <em>Our next conversation.</em>
-            </>
-          }
-        />
-        <Consultation />
+        <h1 className="sr-only">Contact SRIVARDHAN — book a free design consultation</h1>
+        <Consultation formFirst />
       </>
     );
   else if (path === "journal/")
