@@ -68,13 +68,10 @@ export function validateLead(input) {
   }
   if (
     data.name.length < 2 ||
-    !data.location ||
     !serviceNames.includes(data.service) ||
-    !properties.includes(data.property)
+    (data.property && !properties.includes(data.property))
   )
-    throw Error(
-      "Please complete your name, service, location and property type.",
-    );
+    throw Error("Please enter your name and choose what you need.");
   const digits = data.phone.replace(/\D/g, "");
   if (
     digits.length < 10 ||
