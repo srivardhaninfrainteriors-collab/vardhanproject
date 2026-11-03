@@ -10,6 +10,7 @@ import {
   url,
   asset,
   pageRoutes,
+  portfolio,
 } from "./content.js";
 import {
   initAnalytics,
@@ -30,6 +31,19 @@ const Kicker = ({ children, light = false }) => (
   </div>
 );
 function Picture({ name, alt = "", className = "", hero = false }) {
+  if (name.startsWith("p-"))
+    return (
+      <img
+        className={className}
+        src={asset(`images/${name}-1200.webp`)}
+        srcSet={`${asset(`images/${name}-640.webp`)} 640w, ${asset(`images/${name}-1200.webp`)} 1200w, ${asset(`images/${name}-1600.webp`)} 1600w`}
+        sizes={hero ? "100vw" : "(max-width: 700px) 100vw, 50vw"}
+        width="1600"
+        height="900"
+        alt={alt}
+        loading={hero ? "eager" : "lazy"}
+      />
+    );
   return (
     <img
       className={className}
@@ -267,8 +281,8 @@ function Philosophy({ full = false }) {
       </div>
       <div className="philosophy-art reveal">
         <Picture
-          name="detail"
-          alt="Considered proportions and natural finishes — reference interior"
+          name="p-foyer-niche"
+          alt="Foyer niche with textured wall and timber ceiling — a SRIVARDHAN project"
         />
         <span className="vertical-note">SPACE. LIGHT. MATERIAL. MEANING.</span>
         <div className="image-caption">
@@ -313,7 +327,10 @@ function Expertise({ all = false }) {
             key={s.slug}
             href={url(`services/${s.slug}/`)}
           >
-            <Picture name={s.image} alt={`${s.label} — design inspiration`} />
+            <Picture
+              name={s.tile || s.image}
+              alt={s.tile ? `${s.label} — a SRIVARDHAN project` : `${s.label} — design inspiration`}
+            />
             <div className="tile-top">
               <span>0{i + 1}</span>
               <Arrow />
@@ -329,25 +346,32 @@ function Expertise({ all = false }) {
   );
 }
 function Gallery({ full = false }) {
+  const groups = ["All", ...new Set(portfolio.map((p) => p.group))];
   const [filter, setFilter] = useState("All");
-  const selected = inspiration.filter(
-    (i) => filter === "All" || i.category === filter,
-  );
+  const [open, setOpen] = useState(null);
+  const dialog = useRef(null);
+  const selected = portfolio.filter((p) => filter === "All" || p.group === filter);
+  const shown = full ? selected : selected.slice(0, 6);
+  useEffect(() => {
+    if (open !== null) dialog.current?.showModal();
+    else dialog.current?.close();
+  }, [open]);
+  const step = (d) => setOpen((i) => (i + d + shown.length) % shown.length);
   return (
     <section id="work" className="gallery section-pad">
       <div className="section-heading reveal">
         <div>
-          <Kicker>SPACES, THROUGH OUR LENS</Kicker>
+          <Kicker>OUR WORK</Kicker>
           <h2>
-            A feeling.
+            Spaces we’ve designed.
             <br />
-            <em>A world of possibilities.</em>
+            <em>Homes that feel personal.</em>
           </h2>
         </div>
         <div className="gallery-intro">
           <p>
-            A curated exploration of the spaces, materials and ideas that move
-            us.
+            Living rooms, kitchens, pooja units, bedrooms and media rooms from
+            our recent residential work.
           </p>
           <a className="line-link" href={url("contact/")}>
             Discuss your project <Arrow />
@@ -355,8 +379,8 @@ function Gallery({ full = false }) {
         </div>
       </div>
       <div className="gallery-toolbar">
-        <div className="filters" aria-label="Filter design inspiration">
-          {["All", "Interiors", "Architecture", "Commercial"].map((f) => (
+        <div className="filters" aria-label="Filter our work">
+          {groups.map((f) => (
             <button
               key={f}
               aria-pressed={f === filter}
@@ -367,62 +391,81 @@ function Gallery({ full = false }) {
             </button>
           ))}
         </div>
-        <span>DESIGN INSPIRATION / NOT COMPLETED WORK</span>
+        <span>SRIVARDHAN PROJECT WORK · {selected.length} VIEWS</span>
       </div>
-      <div className="gallery-grid">
-        {selected.slice(0, full ? 4 : 3).map((i, index) => (
-          <a
-            className={`project-card project-${index}`}
-            href={url(`inspiration/${i.slug}/`)}
-            key={i.slug}
+      <div className="work-grid">
+        {shown.map((p, i) => (
+          <button
+            type="button"
+            className="work-item"
+            key={p.image}
+            onClick={() => setOpen(i)}
+            aria-label={`View larger: ${p.room}`}
           >
-            <div className="project-image">
-              <Picture
-                name={i.image}
-                alt={`${i.title} — reference photography`}
-              />
-              <span className="project-view">
-                Explore the idea <Arrow />
-              </span>
-            </div>
-            <div className="project-caption">
-              <div>
-                <small>{i.category} / REFERENCE STUDY</small>
-                <h3>{i.title}</h3>
-              </div>
-              <Arrow />
-            </div>
-          </a>
+            <Picture name={p.image} alt={`${p.room} — a SRIVARDHAN project`} />
+            <span>{p.room}</span>
+          </button>
         ))}
       </div>
-      <p className="honesty-note">
-        These photographs illustrate design directions and are not SRIVARDHAN
-        projects. Ask us about relevant work during your consultation.
-      </p>
-      {full && (
-        <div className="portfolio-note">
-          <h3>Our work, shared with care.</h3>
-          <p>
-            Client-approved project photography and case studies will be
-            published here when available. Speak with the team about relevant
-            examples and current project details.
-          </p>
-          <Button>Talk about your project</Button>
+      {!full && (
+        <div className="work-more">
+          <Button href={url("projects/")} outline>
+            See all {portfolio.length} views of our work
+          </Button>
         </div>
       )}
-      {projects.length > 0 && (
-        <div className="gallery-grid">
-          {projects.map((p) => (
-            <a href={url(`projects/${p.slug}/`)} key={p.slug}>
-              <img src={asset(p.cover)} alt={p.title} loading="lazy" />
-              <h3>{p.title}</h3>
-              <p>
-                {p.location} · {p.scope}
-              </p>
-            </a>
-          ))}
-        </div>
-      )}
+      <dialog
+        ref={dialog}
+        className="work-lightbox"
+        onClose={() => setOpen(null)}
+        onClick={(e) => e.target === e.currentTarget && setOpen(null)}
+        onKeyDown={(e) => {
+          if (e.key === "ArrowRight") step(1);
+          if (e.key === "ArrowLeft") step(-1);
+        }}
+      >
+        {open !== null && shown[open] && (
+          <figure>
+            <Picture name={shown[open].image} hero alt={`${shown[open].room} — a SRIVARDHAN project`} />
+            <figcaption>
+              <span>{shown[open].room}</span>
+              <span>
+                <button type="button" onClick={() => step(-1)} aria-label="Previous image">←</button>
+                {open + 1} / {shown.length}
+                <button type="button" onClick={() => step(1)} aria-label="Next image">→</button>
+                <button type="button" onClick={() => setOpen(null)} aria-label="Close">✕</button>
+              </span>
+            </figcaption>
+          </figure>
+        )}
+      </dialog>
+    </section>
+  );
+}
+function WorkStrip() {
+  const picks = ["p-living-tv-wall", "p-dining", "p-pooja-kitchen", "p-bedroom-panelled", "p-living-lounge", "p-kitchen"];
+  return (
+    <section className="work-strip section-pad">
+      <div className="work-strip-head">
+        <Kicker>OUR RECENT WORK</Kicker>
+        <a className="line-link" href={url("projects/")}>
+          See more <Arrow />
+        </a>
+      </div>
+      <div className="work-strip-row">
+        {picks.map((name) => {
+          const p = portfolio.find((x) => x.image === name);
+          return (
+            <figure key={name}>
+              <Picture name={name} alt={`${p.room} — a SRIVARDHAN project`} />
+              <figcaption>{p.room}</figcaption>
+            </figure>
+          );
+        })}
+      </div>
+      <a className="button work-strip-cta" href="#consultation">
+        Get my free consultation <Arrow />
+      </a>
     </section>
   );
 }
@@ -508,8 +551,8 @@ function Materials() {
     <section className="materials">
       <div className="material-photo reveal">
         <Picture
-          name="detail"
-          alt="A palette of natural surfaces and warm finishes — reference photography"
+          name="p-living-tv-wall"
+          alt="Fluted TV wall, timber ceiling and marble-finish unit — a SRIVARDHAN project"
         />
         <span>THE LANGUAGE OF MATERIALS</span>
       </div>
@@ -863,8 +906,8 @@ function Journal({ full = false }) {
         {journal.map((j) => (
           <a href={url(`journal/${j.slug}/`)} key={j.slug}>
             <Picture
-              name={j.image}
-              alt={`${j.category} reference photography`}
+              name={j.thumb || j.image}
+              alt={j.thumb ? `${j.category} — a SRIVARDHAN project` : `${j.category} reference photography`}
             />
             <small>{j.category} / FIELD NOTES</small>
             <h3>
@@ -1410,6 +1453,7 @@ function MarketingApp({ path = "" }) {
             campaign={path.split("/")[1]}
           />
         </section>
+        <WorkStrip />
       </>
     );
   else if (service) body = <ServicePage service={service} />;

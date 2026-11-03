@@ -16,6 +16,7 @@ export const services = [
     label: "Luxury Home Interiors",
     category: "Interiors",
     image: "living",
+    tile: "p-living-tv-wall",
     title: "Interiors with a point of view.",
     intro:
       "A considered palette. A more intuitive layout. A home that feels unmistakably yours. Explore luxury interior design in Vijayawada, shaped around the way you live.",
@@ -44,6 +45,7 @@ export const services = [
     label: "Premium Home Interiors",
     category: "Interiors",
     image: "detail",
+    tile: "p-bedroom-panelled",
     title: "Room for the life you imagine.",
     intro:
       "From a welcoming living room to a kitchen that works beautifully, explore a coherent approach to everyday living in Vijayawada.",
@@ -184,6 +186,7 @@ export const services = [
     label: "Renovations & Transformations",
     category: "Interiors",
     image: "detail",
+    tile: "p-dining",
     title: "A new chapter for a familiar space.",
     intro:
       "Look at your existing space with fresh eyes. Explore better layouts, renewed finishes and thoughtful changes that support how you live today.",
@@ -287,12 +290,34 @@ export const inspiration = [
 ];
 // Publish only client-approved case studies with image rights and verified project details.
 export const projects = [];
+// Srivardhan project work (design visualisations supplied by the studio).
+export const portfolio = [
+  { image: "p-living-tv-wall", room: "Living room · fluted TV wall & jaali", group: "Living" },
+  { image: "p-dining", room: "Dining · marble feature wall", group: "Dining & Kitchen" },
+  { image: "p-bedroom-panelled", room: "Bedroom · upholstered headboard wall", group: "Bedrooms" },
+  { image: "p-pooja-kitchen", room: "Pooja unit & modular kitchen", group: "Dining & Kitchen" },
+  { image: "p-living-lounge", room: "Lounge · accent mirrors & jaali partition", group: "Living" },
+  { image: "p-media-room", room: "Media room · home theatre unit", group: "Media room" },
+  { image: "p-living-sofa", room: "Living room · gallery wall", group: "Living" },
+  { image: "p-kitchen", room: "Modular kitchen · handleless shutters", group: "Dining & Kitchen" },
+  { image: "p-bedroom-accent", room: "Bedroom · fluted panel & wall art", group: "Bedrooms" },
+  { image: "p-foyer-niche", room: "Foyer · textured niche", group: "Living" },
+  { image: "p-dining-crockery", room: "Dining · crockery unit & jaali", group: "Dining & Kitchen" },
+  { image: "p-bedroom-wardrobe", room: "Bedroom · fluted-glass wardrobe", group: "Bedrooms" },
+  { image: "p-living-view", room: "Living room · ceiling detail", group: "Living" },
+  { image: "p-dining-kitchen", room: "Dining & wash counter", group: "Dining & Kitchen" },
+  { image: "p-bedroom-sliding", room: "Bedroom · sliding wardrobe", group: "Bedrooms" },
+  { image: "p-corridor", room: "Corridor · jaali & timber ceiling", group: "Living" },
+  { image: "p-dressing", room: "Dressing area · sculpted mirror", group: "Bedrooms" },
+  { image: "p-media-recliners", room: "Media room · recliners", group: "Media room" },
+];
 export const journal = [
   {
     slug: "prepare-for-your-design-consultation",
     title: "Before the first conversation",
     category: "Planning",
     image: "living",
+    thumb: "p-living-sofa",
     intro:
       "A few thoughtful preparations can make your design consultation more useful.",
     paragraphs: [
@@ -315,6 +340,7 @@ export const journal = [
     title: "Materials that belong together",
     category: "Materials",
     image: "detail",
+    thumb: "p-kitchen",
     intro:
       "A coherent space begins with the relationships between its materials.",
     paragraphs: [
