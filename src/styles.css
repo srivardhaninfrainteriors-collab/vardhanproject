@@ -2469,3 +2469,187 @@ textarea {
 .lead-pagination button:disabled {
   cursor: default;
 }
+
+/* Quick consultation form (ad landing + contact) */
+.quick-form h3 {
+  font-size: 30px;
+}
+.quick-kicker {
+  display: block;
+  font-size: 9px;
+  letter-spacing: 0.16em;
+  color: var(--brand-deep);
+  margin-bottom: 14px;
+}
+.quick-form .form-subtitle {
+  margin: 10px 0 24px;
+  font-size: 11px;
+}
+.quick-form label {
+  margin-bottom: 18px;
+  font-size: 11px;
+}
+.quick-form input {
+  font-size: 15px;
+  min-height: 48px;
+}
+.phone-field {
+  display: flex !important;
+  align-items: center;
+  gap: 10px;
+  border-bottom: 1px solid #babbb0;
+  color: var(--ink) !important;
+  font-size: 15px !important;
+}
+.phone-field b {
+  font-weight: 500;
+}
+.phone-field input {
+  border-bottom: 0;
+}
+.quick-label {
+  font-size: 11px;
+  margin-bottom: 10px;
+}
+.service-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 20px;
+}
+.service-chips button {
+  border: 1px solid #c9c8bb;
+  border-radius: 999px;
+  padding: 10px 15px;
+  font-size: 12px;
+  background: transparent;
+  color: var(--ink);
+  cursor: pointer;
+  min-height: 42px;
+}
+.service-chips button.active {
+  background: var(--ink);
+  border-color: var(--ink);
+  color: var(--paper);
+}
+.quick-form .button {
+  margin-top: 6px;
+  min-height: 54px;
+  font-size: 12px;
+}
+.quick-form .form-footnote a {
+  text-decoration: underline;
+}
+.quick-form .form-status.success {
+  font-size: 14px;
+  line-height: 1.7;
+}
+.quick-form .text-link {
+  display: block;
+  margin-top: 12px;
+  text-decoration: underline;
+}
+.campaign-hero {
+  display: grid;
+  grid-template-columns: minmax(0, 1.15fr) minmax(330px, 440px);
+  align-items: center;
+  gap: 50px;
+  padding: 100px var(--gutter) 40px;
+  min-height: 100svh;
+}
+.campaign-hero > .campaign-copy {
+  padding: 0;
+  max-width: 640px;
+}
+.campaign-hero h1 {
+  font-size: clamp(40px, 5vw, 76px);
+}
+.campaign-points {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 22px;
+  display: grid;
+  gap: 8px;
+  font-size: 13px;
+}
+.campaign-points li::before {
+  content: "✓";
+  margin-right: 10px;
+  color: var(--brand);
+}
+.campaign-call {
+  color: var(--paper);
+  font-size: 12px;
+  text-decoration: underline;
+}
+.campaign-hero .hero-form p {
+  color: var(--muted);
+  max-width: none;
+}
+.campaign-hero .hero-form .form-subtitle {
+  margin: 10px 0 22px;
+  font-size: 11px;
+}
+.campaign-hero .hero-form .form-footnote {
+  margin: 12px 0 0;
+  font-size: 10px;
+}
+.hero-form {
+  position: relative;
+  z-index: 1;
+  padding: 32px;
+  box-shadow: 0 30px 70px #0006;
+  color: var(--ink);
+}
+@media (max-width: 900px) {
+  .campaign-hero {
+    grid-template-columns: 1fr;
+    gap: 18px;
+    padding: 84px 16px 28px;
+    min-height: 0;
+  }
+  .campaign-hero h1 {
+    font-size: 34px;
+    line-height: 1.08;
+  }
+  .campaign-hero .kicker,
+  .campaign-copy p,
+  .campaign-points,
+  .campaign-call {
+    display: none;
+  }
+  .hero-form {
+    padding: 18px 18px 20px;
+  }
+  .campaign-hero {
+    padding-top: 78px !important;
+  }
+  .campaign-hero h1 {
+    font-size: 28px !important;
+  }
+  .campaign-hero .hero-form .form-subtitle {
+    display: none;
+  }
+  .hero-form h3 {
+    margin-bottom: 14px;
+  }
+  .hero-form label {
+    margin-bottom: 12px;
+  }
+  .hero-form .service-chips {
+    margin-bottom: 12px;
+  }
+  .hero-form .service-chips button {
+    padding: 8px 13px;
+    min-height: 38px;
+  }
+  .mobile-contact.on-campaign {
+    display: none !important;
+  }
+  .quick-form h3 {
+    font-size: 24px;
+  }
+  .quick-form .form-subtitle {
+    margin-bottom: 16px;
+  }
+}

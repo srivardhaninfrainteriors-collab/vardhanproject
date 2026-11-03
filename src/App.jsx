@@ -582,11 +582,16 @@ function Confidence() {
     </section>
   );
 }
-function LeadForm({ service = "", campaign = "" }) {
+const QUICK_SERVICES = [
+  ["Luxury interior design", "Home interiors"],
+  ["Renovations & transformations", "Renovation"],
+  ["Residential construction", "House construction"],
+  ["Commercial interiors & construction", "Office / commercial"],
+];
+function LeadForm({ service = "", campaign = "", hero = false }) {
   const [ready, setReady] = useState(false);
   useEffect(() => setReady(true), []);
-  const [stage, setStage] = useState(1),
-    [selected, setSelected] = useState(service),
+  const [selected, setSelected] = useState(service || QUICK_SERVICES[0][0]),
     [state, setState] = useState("idle"),
     [message, setMessage] = useState(""),
     [handoff, setHandoff] = useState("");
@@ -605,28 +610,23 @@ function LeadForm({ service = "", campaign = "" }) {
     else if (!/\.github\.io$/.test(window.location.hostname))
       setEndpoint("/api");
   }, []);
+  const options = QUICK_SERVICES.some(([v]) => v === selected)
+    ? QUICK_SERVICES
+    : [[selected, services.find((s) => s.name === selected)?.label || selected], ...QUICK_SERVICES];
   async function submit(e) {
     e.preventDefault();
     if (state === "sending") return;
     const phone = form.current.elements.phone;
     const digits = phone.value.replace(/\D/g, "");
     phone.setCustomValidity(
-      digits.length < 10 ||
-        digits.length > 15 ||
-        !/^[+0-9 ()-]+$/.test(phone.value)
-        ? "Enter a phone number with 10–15 digits."
+      digits.length < 10 || digits.length > 15
+        ? "Enter a 10-digit mobile number."
         : "",
     );
     if (!form.current.reportValidity()) return;
-    if (stage === 1) {
-      setStage(2);
-      requestAnimationFrame(() =>
-        form.current.querySelector('[name="location"]')?.focus(),
-      );
-      return;
-    }
     const data = Object.fromEntries(new FormData(form.current));
-    data.consent = data.consent === "on";
+    if (digits.length === 10) data.phone = `+91 ${digits}`;
+    data.consent = true; // Submitting is the request to be contacted; stated beside the button.
     data.analyticsConsent = !!consent()?.analytics;
     data.marketingConsent = !!consent()?.marketing;
     data.attribution = attribution();
@@ -634,32 +634,19 @@ function LeadForm({ service = "", campaign = "" }) {
     data.campaign = campaign;
     data.requestId = leadId.current || (leadId.current = crypto.randomUUID());
     data.service = selected;
-    if (!data.consent) return;
     if (!endpoint) {
       const lines = [
-        `Hello SRIVARDHAN, I would like a private consultation.`,
-        ...[
-          "name",
-          "phone",
-          "service",
-          "location",
-          "property",
-          "area",
-          "budget",
-          "timeline",
-          "company",
-          "message",
-        ]
+        "Hello SRIVARDHAN, I would like a free consultation.",
+        ...["name", "phone", "service", "location"]
           .filter((k) => data[k])
           .map((k) => `${k}: ${data[k]}`),
-        "I consent to being contacted about this inquiry.",
       ];
       setHandoff(
         `https://wa.me/${brand.whatsapp}?text=${encodeURIComponent(lines.join("\n"))}`,
       );
       setState("handoff");
       setMessage(
-        "Your inquiry is ready. Open WhatsApp and press Send to share it with our team. It has not been submitted yet.",
+        "Your inquiry is ready. Open WhatsApp and press Send to share it with our team.",
       );
       return;
     }
@@ -677,18 +664,14 @@ function LeadForm({ service = "", campaign = "" }) {
         throw new Error(result.error || "Your inquiry could not be saved.");
       setState("success");
       setMessage(
-        `Your consultation request has been saved. Reference ${result.id.slice(0, 8).toUpperCase()}. The team can review your project details and contact you. For a time-sensitive inquiry, call us directly.`,
+        `Thank you, ${String(data.name).split(" ")[0]}! We’ve received your request. Our team will call you shortly on ${data.phone}.`,
       );
-      track("generate_lead", {
-        event_id: result.id,
-        service: selected,
-        campaign,
-      });
+      track("generate_lead", { event_id: result.id, service: selected, campaign });
       form.current.reset();
     } catch (err) {
       setState("error");
       setMessage(
-        `${err.name === "TimeoutError" ? "The connection timed out. You can retry the same inquiry safely." : err.message} You can also reach us using the contact links.`,
+        `${err.name === "TimeoutError" ? "The connection timed out. Please try again." : err.message} You can also call or WhatsApp us.`,
       );
     }
   }
@@ -698,214 +681,85 @@ function LeadForm({ service = "", campaign = "" }) {
   }, [state]);
   return (
     <form
-      className="lead-form"
+      className={`lead-form quick-form ${hero ? "hero-form" : ""}`}
       onSubmit={submit}
       ref={form}
-      onChange={() => {
-        if (state === "handoff") {
-          setHandoff("");
-          setMessage("");
-          setState("idle");
-        }
-      }}
+      id={hero ? "consultation" : undefined}
+      noValidate={false}
     >
-      <div className="form-top">
-        <span>YOUR NEXT CHAPTER STARTS HERE</span>
-        <span>0{stage} / 02</span>
-      </div>
-      <h3>
-        {stage === 1
-          ? "Tell us a little about you."
-          : "A few details about your vision."}
-      </h3>
+      <span className="quick-kicker">FREE DESIGN CONSULTATION</span>
+      <h3>{state === "success" ? "Request received." : "Get a call back from our designer."}</h3>
       <p className="form-subtitle">
-        {stage === 1
-          ? "A simple first step. A thoughtful conversation to follow."
-          : "These details help us prepare for your conversation."}
+        {state === "success" ? "We’ll be in touch soon." : "Takes 20 seconds. No obligation."}
       </p>
       {state !== "success" && (
         <fieldset className="form-fields" disabled={state === "sending"}>
-          <div hidden={stage !== 1}>
-            <div className="form-row">
-              <label>
-                Your name
-                <input
-                  name="name"
-                  autoComplete="name"
-                  placeholder="Full name"
-                  required
-                  minLength={2}
-                  maxLength={100}
-                />
-              </label>
-              <label>
-                Phone number
-                <input
-                  name="phone"
-                  type="tel"
-                  inputMode="tel"
-                  autoComplete="tel"
-                  placeholder="+91"
-                  required
-                  onInput={(e) => e.currentTarget.setCustomValidity("")}
-                  title="Enter a phone number with 10–15 digits"
-                  maxLength={20}
-                />
-              </label>
-            </div>
-            <label>
-              I’m interested in
-              <select
-                name="service"
-                value={selected}
-                onChange={(e) => setSelected(e.target.value)}
-                required
-              >
-                <option value="">Select your project</option>
-                {services.map((s) => (
-                  <option key={s.slug}>{s.name}</option>
-                ))}
-              </select>
-            </label>
-          </div>
-          <div hidden={stage !== 2}>
-            <div className="form-row">
-              <label>
-                Project location
-                <input
-                  name="location"
-                  placeholder="City / neighbourhood"
-                  maxLength={150}
-                  required={stage === 2}
-                />
-              </label>
-              <label>
-                Property type
-                <select name="property" required={stage === 2} defaultValue="">
-                  <option value="">Select property type</option>
-                  {[
-                    "Apartment",
-                    "Independent home",
-                    "Villa",
-                    "Plot",
-                    "Office",
-                    "Retail",
-                    "Development",
-                    "Other",
-                  ].map((x) => (
-                    <option key={x}>{x}</option>
-                  ))}
-                </select>
-              </label>
-            </div>
-            <div className="form-row">
-              <label>
-                Indicative budget
-                <select name="budget" defaultValue="Not decided">
-                  <option>Not decided</option>
-                  {(selected.includes("construction") ||
-                  selected.includes("partnership") ||
-                  selected.includes("Villas")
-                    ? [
-                        "₹25–50 lakh",
-                        "₹50 lakh–1 crore",
-                        "₹1–3 crore",
-                        "₹3 crore+",
-                      ]
-                    : [
-                        "Under ₹10 lakh",
-                        "₹10–25 lakh",
-                        "₹25–50 lakh",
-                        "₹50 lakh+",
-                      ]
-                  ).map((x) => (
-                    <option key={x}>{x}</option>
-                  ))}
-                </select>
-              </label>
-              <label>
-                Expected timeline
-                <select name="timeline" defaultValue="Exploring options">
-                  {[
-                    "Exploring options",
-                    "Within 3 months",
-                    "3–6 months",
-                    "6–12 months",
-                    "More than a year",
-                  ].map((x) => (
-                    <option key={x}>{x}</option>
-                  ))}
-                </select>
-              </label>
-            </div>
-            <label>
-              Approximate area <span>(optional, sq ft)</span>
+          <label>
+            Your name
+            <input
+              name="name"
+              autoComplete="name"
+              placeholder="Full name"
+              required
+              minLength={2}
+              maxLength={100}
+            />
+          </label>
+          <label>
+            Mobile number
+            <span className="phone-field">
+              <b>+91</b>
               <input
-                name="area"
-                type="number"
-                min="1"
-                max="10000000"
-                placeholder="e.g. 2000"
+                name="phone"
+                type="tel"
+                inputMode="tel"
+                autoComplete="tel-national"
+                placeholder="98765 43210"
+                required
+                onInput={(e) => e.currentTarget.setCustomValidity("")}
+                maxLength={20}
               />
-            </label>
-            {selected.includes("partnership") && (
-              <label>
-                Organisation / project name
-                <input name="company" maxLength={150} />
-              </label>
-            )}
-            <label>
-              Anything else you’d like us to know? <span>(optional)</span>
-              <textarea
-                name="message"
-                rows={2}
-                maxLength={2000}
-                placeholder="Your ideas, priorities or questions"
-              />
-            </label>
-            <label className="consent-check">
-              <input name="consent" type="checkbox" required={stage === 2} />
-              <span>
-                I agree to be contacted about this inquiry and have read the{" "}
-                <a href={url("privacy/")}>privacy notice</a>.
-              </span>
-            </label>
+            </span>
+          </label>
+          <div className="quick-label" id={`need-${hero ? "h" : "f"}`}>
+            What do you need?
           </div>
+          <div className="service-chips" role="radiogroup" aria-labelledby={`need-${hero ? "h" : "f"}`}>
+            {options.map(([value, label]) => (
+              <button
+                type="button"
+                key={value}
+                role="radio"
+                aria-checked={selected === value}
+                className={selected === value ? "active" : ""}
+                onClick={() => setSelected(value)}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+          <label>
+            City <span>(optional)</span>
+            <input name="location" autoComplete="address-level2" placeholder="e.g. Vijayawada" maxLength={150} />
+          </label>
           <div className="honeypot" aria-hidden="true">
             <label>
               Leave empty
               <input name="website" tabIndex={-1} autoComplete="off" />
             </label>
           </div>
-          <div className="form-actions">
-            {stage === 2 && (
-              <button
-                type="button"
-                className="back-button"
-                onClick={() => {
-                  setStage(1);
-                  setHandoff("");
-                  setState("idle");
-                }}
-              >
-                ← Back
-              </button>
-            )}
-            <button
-              className="button"
-              type="submit"
-              disabled={!ready || state === "sending"}
-            >
-              {stage === 1
-                ? "Begin your consultation"
-                : state === "sending"
-                  ? "Saving your inquiry…"
-                  : endpoint
-                    ? "Request a private consultation"
-                    : "Prepare WhatsApp inquiry"}
-              <Arrow />
-            </button>
-          </div>
+          <button className="button" type="submit" disabled={!ready || state === "sending"}>
+            {state === "sending"
+              ? "Sending…"
+              : endpoint || !ready
+                ? "Get my free consultation"
+                : "Send on WhatsApp"}
+            <Arrow />
+          </button>
+          <p className="form-footnote">
+            By submitting, you agree to be contacted about this inquiry. See our{" "}
+            <a href={url("privacy/")}>privacy notice</a>.
+          </p>
         </fieldset>
       )}
       {message && (
@@ -922,25 +776,20 @@ function LeadForm({ service = "", campaign = "" }) {
               href={handoff}
               target="_blank"
               rel="noopener noreferrer"
-              onClick={() =>
-                track("whatsapp_click", { placement: "form_handoff" })
-              }
+              onClick={() => track("whatsapp_click", { placement: "form_handoff" })}
             >
               Open WhatsApp & send <Arrow />
             </a>
           )}
+          {state === "success" && (
+            <a className="text-link" href={`tel:${brand.telephone}`}>
+              In a hurry? Call {brand.phone}
+            </a>
+          )}
         </div>
       )}
-      <p className="form-footnote">
-        {endpoint
-          ? "Your details are used to respond to your project inquiry."
-          : "Prefer a conversation? This inquiry opens in WhatsApp for you to send."}
-      </p>
       <noscript>
-        <p>
-          Please enable JavaScript to use this form, or contact us using the
-          telephone and WhatsApp links alongside it.
-        </p>
+        <p>Please call {brand.phone} or WhatsApp us to share your inquiry.</p>
       </noscript>
     </form>
   );
@@ -1542,28 +1391,25 @@ function MarketingApp({ path = "" }) {
             hero
             alt="Design reference photography"
           />
-          <div>
+          <div className="campaign-copy">
             <Kicker light>{campaign.label}</Kicker>
             <h1>{campaign.title}</h1>
             <p>{campaign.intro}</p>
-            <Button href="#consultation">Begin your consultation</Button>
-            <span className="small-note">
-              Design inspiration · reference photography
-            </span>
+            <ul className="campaign-points">
+              {campaign.benefits.map((b) => (
+                <li key={b}>{b}</li>
+              ))}
+            </ul>
+            <a className="campaign-call" href={`tel:${brand.telephone}`}>
+              Prefer to talk? Call {brand.phone}
+            </a>
           </div>
+          <LeadForm
+            hero
+            service={campaign.service}
+            campaign={path.split("/")[1]}
+          />
         </section>
-        <section className="campaign-benefits section-pad">
-          {campaign.benefits.map((b, i) => (
-            <div key={b}>
-              <span>0{i + 1}</span>
-              <h3>{b}</h3>
-            </div>
-          ))}
-        </section>
-        <Consultation
-          service={campaign.service}
-          campaign={path.split("/")[1]}
-        />
       </>
     );
   else if (service) body = <ServicePage service={service} />;
@@ -1690,7 +1536,7 @@ function MarketingApp({ path = "" }) {
       ) : (
         <Footer onPrivacy={() => setCookies(true)} />
       )}
-      <div className="mobile-contact">
+      <div className={`mobile-contact ${campaign ? "on-campaign" : ""}`}>
         <a
           href={`https://wa.me/${brand.whatsapp}`}
           target="_blank"
