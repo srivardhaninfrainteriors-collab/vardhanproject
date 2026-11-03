@@ -165,6 +165,15 @@ function LeadTable({ leads, onOpen, users, compact = false }) {
                   <i className={l.source} />
                   {l.source === "meta" ? "Meta Ads" : title(l.source)}
                 </span>
+                {l.attribution?.utm_source && (
+                  <small className="crm-block crm-muted">
+                    {title(l.attribution.utm_source)}
+                    {l.attribution.utm_medium === "paid" ? " ad" : ""}
+                    {l.attribution.utm_campaign
+                      ? ` · ${l.attribution.utm_campaign}`
+                      : ""}
+                  </small>
+                )}
               </td>
               {!compact && (
                 <>

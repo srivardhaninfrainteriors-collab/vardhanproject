@@ -597,8 +597,13 @@ function LeadForm({ service = "", campaign = "" }) {
     import.meta.env.VITE_LEAD_API_URL || (import.meta.env.DEV ? "/api" : ""),
   );
   useEffect(() => {
-    if (!endpoint && window.__SV_RUNTIME__?.leadApi)
+    if (endpoint) return;
+    if (window.__SV_RUNTIME__?.leadApi)
       setEndpoint(window.__SV_RUNTIME__.leadApi);
+    // The Vercel deployment serves the lead API on the same origin; only the
+    // static GitHub Pages copy falls back to the WhatsApp handoff.
+    else if (!/\.github\.io$/.test(window.location.hostname))
+      setEndpoint("/api");
   }, []);
   async function submit(e) {
     e.preventDefault();

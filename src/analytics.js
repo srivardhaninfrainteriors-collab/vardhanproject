@@ -87,8 +87,16 @@ export function track(event, params = {}) {
       });
   }
 }
+const UTM = ["utm_source", "utm_medium", "utm_campaign", "utm_content", "utm_term"];
 export function attribution() {
-  if (!consent()?.analytics && !consent()?.marketing) return {};
+  if (!consent()?.analytics && !consent()?.marketing) {
+    // Without consent nothing is stored; only the campaign tags in the URL the
+    // visitor is on when they submit are sent with their inquiry.
+    const q = new URLSearchParams(window.location.search);
+    return Object.fromEntries(
+      UTM.filter((k) => q.has(k)).map((k) => [k, q.get(k).slice(0, 150)]),
+    );
+  }
   let result = {};
   try {
     result = JSON.parse(sessionStorage.getItem("sv-attribution")) || {};
